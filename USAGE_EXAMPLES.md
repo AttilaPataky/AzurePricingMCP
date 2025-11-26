@@ -1,192 +1,453 @@
-# Azure Pricing MCP Server Usage Examples
+# Usage Examples 📖
 
-## Example Queries for Claude
+Real-world examples of using the Azure Pricing MCP Server with VS Code Copilot or Claude Desktop.
 
-Once you have the MCP server configured with Claude Desktop, you can ask questions like:
+---
 
-### Basic Price Queries
+## Table of Contents
 
-**"What's the price of a Standard_D2s_v3 VM in East US?"**
-- Uses: `azure_price_search` tool
-- Filters by service name, SKU, and region
+- [Basic Price Queries](#basic-price-queries)
+- [Multi-Node & Cluster Pricing](#multi-node--cluster-pricing)
+- [Price Comparisons](#price-comparisons)
+- [Cost Estimations](#cost-estimations)
+- [SKU Discovery](#sku-discovery)
+- [Storage Pricing](#storage-pricing)
+- [Sample API Responses](#sample-api-responses)
+- [Reference Tables](#reference-tables)
 
-**"Show me Azure Storage pricing options"**
-- Uses: `azure_price_search` tool with service family filter
+---
 
-**"What are the current prices for Azure SQL Database?"**
-- Uses: `azure_price_search` tool with service name filter
+## Basic Price Queries
 
-### Price Comparisons
+### Virtual Machine Pricing
 
-**"Compare VM prices between East US and West Europe"**
-- Uses: `azure_price_compare` tool
-- Compares same services across different regions
+**Query:**
+```
+What's the price of a Standard_D4s_v3 VM in East US?
+```
 
-**"What are the cheapest compute options available?"**
-- Uses: `azure_price_search` with service family "Compute"
-- Results sorted by price
+**What happens:**
+- Tool: `azure_price_search`
+- Filters: `service_name=Virtual Machines`, `sku_name=D4s v3`, `region=eastus`
 
-**"Compare different VM sizes for my workload"**
-- Uses: `azure_price_compare` tool to compare SKUs
+**Sample Response:**
+```
+Standard_D4s_v3 in East US:
+- Linux: $0.192/hour
+- Windows: $0.384/hour
+- 1-Year Savings Plan: $0.134/hour (30% savings)
+- 3-Year Savings Plan: $0.106/hour (45% savings)
+```
 
-### Cost Estimations
+---
 
-**"What would it cost to run a Standard_D4s_v3 VM for 8 hours a day?"**
-- Uses: `azure_cost_estimate` tool
-- Calculates based on specific usage patterns
+### Database Pricing
 
-**"Estimate monthly costs for my development environment"**
-- Multiple tool calls for different services
-- Aggregates costs across services
+**Query:**
+```
+What are the prices for Azure SQL Database in West Europe?
+```
 
-**"What are the savings with Azure reserved instances?"**
-- Uses reservation pricing from the API
-- Shows savings compared to on-demand
+**What happens:**
+- Tool: `azure_price_search`
+- Filters: `service_name=Azure SQL Database`, `region=westeurope`
 
-### Advanced Queries
+---
 
-**"Show me all GPU-enabled VMs with pricing"**
-- Uses filtered search for GPU SKUs
-- Compares different GPU options
+### GPU VM Pricing
 
-**"What's the cost difference between different storage tiers?"**
-- Compares Standard, Premium, and Ultra SSD pricing
-- Shows performance vs cost trade-offs
+**Query:**
+```
+Show me NVIDIA GPU VM pricing in East US 2
+```
 
-**"Which regions offer the best pricing for my workload?"**
-- Multi-region price comparison
-- Factors in data transfer costs
+**What happens:**
+- Tool: `azure_price_search`
+- Filters: `service_name=Virtual Machines`, `sku_name=NC`, `region=eastus2`
+
+---
+
+## Multi-Node & Cluster Pricing
+
+### AKS Node Pool Pricing
+
+**Query:**
+```
+Price for 20 Standard_D32s_v6 nodes in East US 2 for AKS
+```
+
+**Sample Response:**
+```
+Standard_D32s_v6 in East US 2:
+
+| Option              | Hourly/Node | Monthly/Node | 20 Nodes/Month |
+|---------------------|-------------|--------------|----------------|
+| Linux On-Demand     | $1.613      | $1,177.49    | $23,549.80     |
+| 1-Year Savings Plan | $1.113      | $812.49      | $16,249.82     |
+| 3-Year Savings Plan | $0.742      | $541.65      | $10,832.93     |
+| Windows             | $3.085      | $2,252.05    | $45,041.00     |
+| Linux Spot          | $0.313      | $228.43      | $4,568.66      |
+```
+
+---
+
+### Kubernetes Cluster Cost Estimate
+
+**Query:**
+```
+Estimate monthly cost for a Kubernetes cluster with:
+- 5 D8s_v5 nodes for system
+- 20 D16s_v5 nodes for workloads
+- All in East US
+```
+
+---
+
+## Price Comparisons
+
+### Cross-Region Comparison
+
+**Query:**
+```
+Compare D4s_v5 VM prices between eastus, westeurope, and southeastasia
+```
+
+**What happens:**
+- Tool: `azure_price_compare`
+- Parameters: `service_name=Virtual Machines`, `sku_name=D4s v5`, `regions=[eastus, westeurope, southeastasia]`
+
+**Sample Response:**
+```
+D4s_v5 Price Comparison:
+
+| Region        | Hourly Price | Monthly (730h) |
+|---------------|--------------|----------------|
+| eastus        | $0.192       | $140.16        |
+| westeurope    | $0.211       | $154.03        |
+| southeastasia | $0.221       | $161.33        |
+
+💡 East US is 13% cheaper than Southeast Asia
+```
+
+---
+
+### SKU Comparison
+
+**Query:**
+```
+Compare storage options: Premium SSD vs Standard SSD vs Standard HDD
+```
+
+---
+
+## Cost Estimations
+
+### Development Environment
+
+**Query:**
+```
+Estimate monthly cost for D4s_v5 running 10 hours per day, 22 days per month
+```
+
+**What happens:**
+- Tool: `azure_cost_estimate`
+- Parameters: `service_name=Virtual Machines`, `sku_name=D4s v5`, `region=eastus`, `hours_per_month=220`
+
+**Sample Response:**
+```
+Cost Estimate for D4s_v5 (Dev Environment)
+
+Usage: 220 hours/month (10hr/day × 22 days)
+
+On-Demand:
+- Hourly: $0.192
+- Monthly: $42.24
+- Yearly: $506.88
+
+With 1-Year Savings Plan:
+- Monthly: $29.48
+- Yearly: $353.76
+- Savings: $153.12/year (30%)
+
+With 3-Year Savings Plan:
+- Monthly: $23.32
+- Yearly: $279.84
+- Savings: $227.04/year (45%)
+```
+
+---
+
+### Production 24/7 Workload
+
+**Query:**
+```
+Estimate yearly cost for E8s_v5 running 24/7 in West US 2
+```
+
+---
+
+## SKU Discovery
+
+### Find Available VM Sizes
+
+**Query:**
+```
+What VM sizes are available for compute-intensive workloads?
+```
+
+**What happens:**
+- Tool: `azure_sku_discovery`
+- Parameters: `service_hint=compute`
+
+---
+
+### App Service Plans
+
+**Query:**
+```
+What App Service plans are available?
+```
+
+**What happens:**
+- Tool: `azure_sku_discovery`
+- Parameters: `service_hint=app service`
+- Uses fuzzy matching: "app service" → "Azure App Service"
+
+**Sample Response:**
+```
+SKU Discovery for 'app service' (mapped to: Azure App Service)
+
+📦 Azure App Service Basic:
+   • B1: $0.018/hour
+   • B2: $0.036/hour
+   • B3: $0.072/hour
+
+📦 Azure App Service Standard:
+   • S1: $0.10/hour
+   • S2: $0.20/hour
+   • S3: $0.40/hour
+
+📦 Azure App Service Premium v3:
+   • P1v3: $0.125/hour
+   • P2v3: $0.25/hour
+   • P3v3: $0.50/hour
+```
+
+---
+
+### Fuzzy Service Name Matching
+
+The `azure_sku_discovery` tool supports common aliases:
+
+| You Say | Maps To |
+|---------|---------|
+| "vm", "virtual machine" | Virtual Machines |
+| "app service", "web app" | Azure App Service |
+| "sql", "database" | Azure SQL Database |
+| "kubernetes", "aks", "k8s" | Azure Kubernetes Service |
+| "storage", "blob" | Storage |
+| "redis", "cache" | Azure Cache for Redis |
+| "cosmos", "cosmosdb" | Azure Cosmos DB |
+| "functions", "serverless" | Azure Functions |
+
+---
+
+## Storage Pricing
+
+### Block Blob Operations
+
+**Query:**
+```
+How much does 100,000 write operations on Block Blob LRS GPv1 in East US cost?
+```
+
+**Sample Response:**
+```
+Block Blob LRS (GPv1) - East US:
+- Write Operations: $0.00036 per 10K
+- 100,000 operations = 10 × 10K
+- Total: $0.0036
+
+With 10% customer discount: $0.00324
+```
+
+---
+
+### Storage Tiers Comparison
+
+**Query:**
+```
+Compare Hot, Cool, and Archive storage pricing in East US
+```
+
+---
 
 ## Sample API Responses
 
 ### Price Search Response
+
 ```json
 {
   "items": [
     {
       "service": "Virtual Machines",
-      "product": "Virtual Machines Dv3 Series",
-      "sku": "D2s v3",
-      "region": "eastus",
-      "location": "US East",
-      "price": 0.096,
+      "product": "Virtual Machines Dsv6 Series",
+      "sku": "D32s v6",
+      "region": "eastus2",
+      "location": "US East 2",
+      "discounted_price": 1.4517,
+      "original_price": 1.613,
       "unit": "1 Hour",
       "type": "Consumption",
       "savings_plans": [
-        {
-          "retailPrice": 0.0672,
-          "term": "1 Year"
-        },
-        {
-          "retailPrice": 0.0528,
-          "term": "3 Years"
-        }
-      ]
+        {"retailPrice": 0.742, "term": "3 Years"},
+        {"retailPrice": 1.113, "term": "1 Year"}
+      ],
+      "savings_amount": 0.1613,
+      "savings_percentage": 10.0
     }
   ],
   "count": 1,
-  "currency": "USD"
+  "currency": "USD",
+  "discount_applied": {
+    "percentage": 10.0,
+    "note": "Prices shown are after discount"
+  }
 }
 ```
 
 ### Cost Estimate Response
+
 ```
-Cost Estimate for Virtual Machines - D2s v3
+Cost Estimate for Virtual Machines - D4s v5
 Region: eastus
-Product: Virtual Machines Dv3 Series
+Product: Virtual Machines Dsv5 Series
 Unit: 1 Hour
 Currency: USD
 
+💰 10.0% discount applied - All prices shown are after discount
+
 Usage Assumptions:
-- Hours per month: 240
-- Hours per day: 8
+- Hours per month: 730
+- Hours per day: 23.98
 
 On-Demand Pricing:
-- Hourly Rate: $0.096
-- Daily Cost: $0.77
-- Monthly Cost: $23.04
-- Yearly Cost: $276.48
+- Hourly Rate: $0.1728
+- Daily Cost: $4.15
+- Monthly Cost: $126.14
+- Yearly Cost: $1,513.73
 
 Savings Plans Available:
 
 1 Year Term:
-- Hourly Rate: $0.0672
-- Monthly Cost: $16.13
-- Yearly Cost: $193.54
-- Savings: 30% ($82.94 annually)
+- Hourly Rate: $0.1206
+- Monthly Cost: $88.04
+- Yearly Cost: $1,056.46
+- Savings: 30.21% ($457.27 annually)
 
 3 Years Term:
-- Hourly Rate: $0.0528
-- Monthly Cost: $12.67
-- Yearly Cost: $152.06
-- Savings: 45% ($124.42 annually)
+- Hourly Rate: $0.0954
+- Monthly Cost: $69.64
+- Yearly Cost: $835.70
+- Savings: 44.80% ($678.03 annually)
 ```
 
-## Common Service Names
+---
 
-When using the tools, these are common Azure service names (case-sensitive):
+## Reference Tables
 
-- `Virtual Machines`
-- `Storage`
-- `Azure Database for MySQL`
-- `Azure Database for PostgreSQL`
-- `Azure SQL Database`
-- `Azure Cosmos DB`
-- `Azure Cache for Redis`
-- `Application Gateway`
-- `Load Balancer`
-- `Azure Kubernetes Service`
-- `Container Instances`
-- `App Service`
-- `Azure Functions`
-- `Logic Apps`
-- `Azure AI services`
-- `Azure OpenAI`
+### Common Azure Service Names
 
-## Common Service Families
+> ⚠️ Service names are **case-sensitive**!
 
-- `Compute`
-- `Storage`
-- `Databases`
-- `Networking`
-- `Analytics`
-- `AI + Machine Learning`
-- `Integration`
-- `Security`
-- `Management and Governance`
+| Service | Exact Name |
+|---------|------------|
+| Virtual Machines | `Virtual Machines` |
+| Storage | `Storage` |
+| SQL Database | `Azure SQL Database` |
+| Cosmos DB | `Azure Cosmos DB` |
+| Kubernetes | `Azure Kubernetes Service` |
+| App Service | `Azure App Service` |
+| Functions | `Azure Functions` |
+| Redis Cache | `Azure Cache for Redis` |
+| PostgreSQL | `Azure Database for PostgreSQL` |
+| MySQL | `Azure Database for MySQL` |
+| OpenAI | `Azure OpenAI` |
+| AI Services | `Azure AI services` |
 
-## Popular Azure Regions
+---
 
-- `eastus` - US East
-- `westus` - US West  
-- `westus2` - US West 2
-- `centralus` - US Central
-- `westeurope` - West Europe
-- `northeurope` - North Europe
-- `eastasia` - East Asia
-- `southeastasia` - Southeast Asia
-- `japaneast` - Japan East
-- `australiaeast` - Australia East
+### Common Azure Regions
+
+| Region Code | Location |
+|-------------|----------|
+| `eastus` | US East |
+| `eastus2` | US East 2 |
+| `westus` | US West |
+| `westus2` | US West 2 |
+| `westus3` | US West 3 |
+| `centralus` | US Central |
+| `westeurope` | West Europe |
+| `northeurope` | North Europe |
+| `uksouth` | UK South |
+| `eastasia` | East Asia |
+| `southeastasia` | Southeast Asia |
+| `japaneast` | Japan East |
+| `australiaeast` | Australia East |
+| `canadacentral` | Canada Central |
+| `brazilsouth` | Brazil South |
+
+---
+
+### Service Families
+
+| Family | Includes |
+|--------|----------|
+| `Compute` | VMs, AKS, Container Instances, App Service |
+| `Storage` | Blob, Files, Disks, Data Lake |
+| `Databases` | SQL, Cosmos DB, PostgreSQL, MySQL |
+| `Networking` | VNet, Load Balancer, Application Gateway, CDN |
+| `AI + Machine Learning` | OpenAI, Cognitive Services, ML |
+| `Analytics` | Synapse, Data Factory, HDInsight |
+
+---
 
 ## Tips for Best Results
 
-1. **Be Specific**: Include exact service names and SKU names when possible
-2. **Use Filters**: Combine multiple filters for precise results
-3. **Consider Regions**: Pricing varies significantly by region
-4. **Check Savings Plans**: Always look for reserved instance and savings plan options
-5. **Factor in Usage**: Use realistic usage patterns for cost estimates
-6. **Compare Options**: Always compare different SKUs and regions
-7. **Currency**: Specify currency if you need non-USD pricing
+| Tip | Example |
+|-----|---------|
+| ✅ Be specific with SKU names | `D4s_v5` not just `D4` |
+| ✅ Use exact region codes | `eastus` not `East US` |
+| ✅ Check savings plans | Always compare 1yr and 3yr options |
+| ✅ Use fuzzy discovery | `azure_sku_discovery` for unknown services |
+| ✅ Specify currency if needed | Add `currency_code=EUR` |
+| ✅ Filter by price type | `Consumption`, `Reservation`, `DevTestConsumption` |
+
+---
 
 ## Troubleshooting
 
-If you get no results:
-- Check service name spelling (case-sensitive)
-- Try broader searches (remove some filters)
-- Verify region names are correct
-- Some services may not be available in all regions
+### No Results Returned
 
-For cost estimates:
-- Ensure the service and SKU combination exists
-- Check that the region supports the service
-- Verify usage hours are reasonable (0-8760 per year)
+- ❌ Service name misspelled or wrong case
+- ❌ SKU doesn't exist in that region
+- ❌ Region name incorrect
+
+**Fix:** Try a broader search first, then narrow down.
+
+### Unexpected Prices
+
+- Check if you're looking at Spot vs On-Demand
+- Windows vs Linux pricing differs significantly
+- Some meters show per-hour, others per-month
+
+### Too Many Results
+
+- Add more filters (region, SKU name)
+- Use `limit` parameter to reduce results
+
+---
+
+<p align="center">
+  <b>Questions?</b> Check <a href="README.md">README.md</a> or open an <a href="https://github.com/charris-msft/azure-pricing-mcp/issues">issue</a>!
+</p>
